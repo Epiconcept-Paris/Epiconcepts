@@ -1,0 +1,11 @@
+Package: Epiconcepts
+Type: Package
+Title: Tools for epidemiologists
+Version: 0.1
+Date: 2014-06-10
+Author: jp.decorps@epiconcept.fr
+Maintainer: Jean Pierre Decorps <jp.decorps@epiconcept.fr>
+Description: Usefull tools for epidemiology. Cases Control and Cohorte studies.
+License: LGPL-3
+Depends: methods, ggplot2, plyr, fBasics,gridExtra,jsonlite
+Imports: xtable, grid, epiR, fBasics, boot

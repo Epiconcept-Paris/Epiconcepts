@@ -1,0 +1,74 @@
+#exportPattern("^[[:alpha:]]+")
+
+export(
+  ec.use,
+  ec.Log,
+  VAL,
+  ec.labels,
+  ec.move,
+  ec.preview,
+  ec.rename,
+  ecr.rename,
+  ec.recode,
+  ec.removeMissing,
+  ec.save,
+  ec.Missing.check,
+  # ======== stats
+  ec.codebook,
+  ec.freq,
+  ec.logistic,
+  ec.max,
+  ec.mean,
+  ec.median,
+  ec.min,
+  ec.proportion,
+  ec.summary,
+  ec.tabulate,
+  ecr.freq,
+  ecr.proportion,
+  ecr.summary,
+  ecr.tabulate,
+  ec.toDate,
+  ec.xtable,
+  # ======== Epidemiology
+  ec.cc,
+  ec.ccinter,
+  ecr.ccinter,
+  CCTable,
+  CS,
+  ec.csinter,
+  ecr.csinter,
+  CSTable,
+  rCC,
+  rCCTable,
+  rCS,
+  rCSTable,
+  # ======== Graphics
+  Plot,
+  ec.plot,
+  ec.histogram,
+  ec.agePyramid,
+  ec.epiCurve,
+  ec.pie,
+  ecr.histogram,
+  ecr.pie
+)
+
+#exportClasses(
+#  ec.histogram  
+#)
+
+exportMethods(
+    Plot,
+    ec.plot,
+    Close
+)
+
+import(methods,
+       ggplot2,
+       plyr,
+       xtable,
+       grid,
+       epiR,
+       fBasics,
+       boot)
