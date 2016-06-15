@@ -1,138 +1,94 @@
-library(methods)
-
-setClass("ec.epiCurve",
-  # ==== Inheritance
-  contain = "EpiPlot",
-  # ==== Properties
-  representation (
-    vardate      = "character",
-    vartype      = "character",
-    varcut       = "character",
-    EPC.MAXY     = "numeric"
-  )           
-)
-
-# ------------------------------------------------------------------------------
-# Real constructor
-# ------------------------------------------------------------------------------
-setMethod("initialize", "ec.epiCurve",
-  function(.Object, vardate, type, cut="day") {
-    .Object@vardate = vardate;
-    .Object@vartype = type;
-    .Object@varcut = cut;
-
-    # --------------------------------------------------------------------------
-    computeXScale <- function(O_, DR)
-    {
-      period = O_@varcut;
-      if (O_@vartype == "date") {
-        DTFMT = "%Y-%m-%d";
-        if (period == "day") {
-          S <- seq(ISOdate(DR[1], DR[2], DR[3]),
-                   ISOdate(DR[4], DR[5], DR[6]), by = "day")
-          L <- paste(
-          sprintf("%s",format(S, format="%m")),
-          sprintf("%s",format(S, format="%d")),
-          sep='\n')
-          return(as.factor(L));
-        }
-      }
-    }
-    # --------------------------------------------------------------------------
-
-    computeFactors <- function(O_)
-    {
-      period = O_@varcut;
-      DTFMT = "%Y-%m-%d %H:%M:%S";
-      V <- na.omit(GDS[, O_@vardate]);
-      if (period == "day") {
-        S <-  as.POSIXlt(as.POSIXct(V, DTFMT));
-        L <- paste(
-          sprintf("%s",format(S, format="%m")),
-          sprintf("%s",format(S, format="%d")),
-          sep="\n")
-        return(as.factor(L));
-      }
-    }
-    
-
-    if (type == "date") {
-      D <- as.POSIXct(strptime(GDS[,vardate], "%Y-%m-%d"));
-
-      DATEMIN <- min(D, na.rm=TRUE);
-      DATEMAX <- max(D, na.rm=TRUE);
-      
-      YEARMIN <- as.POSIXlt(DATEMIN)$year+1900;
-      MONTHMIN <- as.POSIXlt(DATEMIN)$mon+1;
-      DAYMIN <- as.POSIXlt(DATEMIN)$mday;
-      
-      YEARMAX <- as.POSIXlt(DATEMAX)$year+1900;
-      MONTHMAX <- as.POSIXlt(DATEMAX)$mon+1;
-      DAYMAX <- as.POSIXlt(DATEMAX)$mday;
-      DATE_RANGE = c(YEARMIN, MONTHMIN, DAYMIN, YEARMAX, MONTHMAX, DAYMAX);
-    }
-    
-    V <- computeFactors(.Object);
-    DF1 <- data.frame(table(V));
-    V <- computeXScale(.Object, DATE_RANGE);
-    DF2 <- data.frame(V)
-    .Object@WDS <- merge(DF2, DF1, by = "V", all = TRUE)
-    .Object@WDS[is.na( .Object@WDS)] <- 0
-    .Object@EPC.MAXY <- max(.Object@WDS$Freq);
-    .Object;
-    # ---------------------------------------------------------------
+ec.epiCurve <- function(x,
+                        date = NULL,
+                        freq=NULL,
+                        cutvar=NULL,
+                        period = NULL,
+                        cutorder = NULL,
+                        color = NULL,
+                        title = NULL,
+                        xlabel = NULL,
+                        ylabel=NULL) {
+  
+  
+  DF <- x
+  
+  if (!is.null(date)) {
+    names(DF)[names(DF)==date] <- "Date"
+    DF$Date <- as.Date(DF$Date)
   }
-)
-
-
-# -----------------------------------------------------------------------------
-# function: ec.epiCurve (call real constructor)
-# Return: an object of type AgePyramide
-# -----------------------------------------------------------------------------
-ec.epiCurve <- function(vardate, type="date", cut="day")
-{
-  return(new("ec.epiCurve", vardate=vardate, type=type, cut=cut));
+  
+  if (!is.null(freq)) {
+    names(DF)[names(DF)==freq] <- "Freq"
+  }
+  
+  if (!is.null(cutvar)) {
+    names(DF)[names(DF)==cutvar] <- "Cut"
+  }
+  else {
+    DF$Cut <- rep("1 cas", length.out = nrow(DF))
+  }
+  
+  if (!is.null(cutorder)) {
+    DF$Cut <- factor(DF$Cut, levels=cutorder, ordered=TRUE)
+  }
+  
+  # Calcul du max après agrégation
+  if (!is.null(cutvar)) {
+    TMP <- DF %>%
+      dplyr::group_by(Date) %>%
+      dplyr::summarize(total=sum(Freq)) %>%
+      as.data.frame()
+    MaxValue = max(TMP$total)
+  } else {
+    MaxValue = max(DF$Freq)
+  }
+  
+  
+  # Calcul du nombre de ticks 'lisibles'
+  TMP <- dplyr::distinct(DF, Date)
+  N = nrow(DF)
+  n_ticks = max(as.integer(log10(N)*10)-10, 1)
+  
+  # Labels de l'axe x
+  d_labels = "%d"
+  d_breaks = sprintf("%d days", n_ticks)
+  if (period == "week") {
+    DW = data_frame(Date = seq(min(DF$Date), max(DF$Date), by="week"))
+    DF <- dplyr::left_join(x = DW, y = DF, by = "Date") %>%
+      as.data.frame()
+    DF$Freq[is.na(DF$Freq)] <- 0
+    DF <- mutate(DF, Week = format(Date, "%V")) %>%
+      mutate(Date = NULL) %>%
+      mutate(Date = Week)
+    
+    d_labels = "%W"
+    d_breaks = sprintf("%d weeks", n_ticks)
+  }
+  
+  
+  
+  P_ <- ggplot(arrange(DF, Cut), aes(x=Date, y=Freq, fill=Cut)) 
+  if (period == "day") {
+    P_ <- P_ + geom_bar(stat='identity') +
+      scale_x_date(date_breaks=d_breaks, date_labels = d_labels, expand = c(0,0))
+  } else {
+    P_ <- P_ +  geom_bar(stat='identity', width=1);
+  }
+  
+  P_ <- P_ + scale_fill_manual(values = color, guide = guide_legend(reverse = TRUE)) +
+    scale_y_continuous(expand = c(0,0)) +
+    
+    geom_hline(yintercept=seq(1, MaxValue, by=1), colour="white", size=0.3) +
+    geom_vline(xintercept = seq(1.5, nrow(DF), by=1), colour="white", size=0.3) +
+    xlab(xlabel) + 
+    ylab(ylabel) +
+    labs(title = title, fill = "") +
+    coord_fixed(ratio=1) +
+    theme_bw() +
+    theme(panel.border = element_blank()) +
+    theme(axis.line.x = element_line(color="black", size = 0.25),
+          axis.line.y = element_line(color="black", size = 0.25))
+  
+  P_
 }
-
-setMethod ("ec.plot" , signature="ec.epiCurve",
-  function(this,
-    fillcolor = "",
-    title     = "",
-    xlabel    = "",
-    ylabel    = "",
-    footer="",
-    bgcolor="",
-    ...)
-  {
-    O_ = this;
-    #GBASE <- ggplot(data = this@WDS, aes(x=X, y=Freq));
-    this@G_TITLE = ifelse(title != "",  sprintf("\n%s\n",title), "");
-    this@G_FOOTER = ifelse(footer != "", sprintf(" \n%s\n ",footer), "");
-    this@G_LABELY = ifelse(ylabel != "", ylabel, this@G_LABELY);
-    this@G_LABELX = ifelse(xlabel != "", xlabel, this@G_LABELX);
-    this@T_BGCOLOR = ifelse(bgcolor == "", "white", bgcolor);
-    this@G_FILLCOLOR = ifelse(fillcolor == "", this@G_FILLCOLOR, fillcolor);
-    
-    Draw <- function(this) {
-      #deviceOn("PYRamide", "svg", width=700)
-      THEME =  theme(panel.background = element_rect(fill = "white", colour="white"))
-      P_ <- ggplot(this@WDS, aes(x=V , y = Freq )); 
-      P_ <- P_ +  geom_bar(stat='identity', fill= this@G_FILLCOLOR, width=1);
-        P_ <- P_ +  geom_hline(yintercept=seq(1, this@EPC.MAXY, by=1), colour="white", size=1);
-        P_ <- P_ +  geom_vline(xintercept = seq(1.5, nrow(this@WDS), by=1), colour="white", size=1);
-        P_ <- P_ +  geom_vline(xintercept = 0, colour="black", size=1);
-        P_ <- P_ +  geom_hline(yintercept = 0, colour="black", size=1);
-        P_ <- P_ +  coord_fixed(ratio=1);
-        P_ <- P_ +  ggtitle(this@G_TITLE);
-        P_ <- P_ +  xlab(this@G_LABELX);
-        P_ <- P_ +  ylab(this@G_LABELY);
-        P_ <- P_ +  THEME
-        P_
-      #dev.off()
-      
-    }
-    
-    Draw(this);
-  }
-);
 
