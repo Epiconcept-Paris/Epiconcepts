@@ -4,7 +4,7 @@ ec.epiCurve <- function(x,
                         cutvar=NULL,
                         period = NULL,
                         cutorder = NULL,
-                        color = NULL,
+                        colors = NULL,
                         title = NULL,
                         xlabel = NULL,
                         ylabel=NULL) {
@@ -12,7 +12,7 @@ ec.epiCurve <- function(x,
   
   DF <- x
   .cutorder <- cutorder
-  .color = color
+  .color = colors
   
   
   if (is.null(.color)) {
@@ -111,7 +111,7 @@ ec.epiCurve <- function(x,
     theme(axis.text.x = element_text(angle=90))+
     theme(axis.line.x = element_line(colour="black", linetype="solid", size = 0.5),
           axis.line.y = element_line(colour="black", linetype="solid", size = 0.5))
-  
+    
   P_
 }
 
