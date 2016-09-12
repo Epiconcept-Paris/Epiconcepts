@@ -22,7 +22,15 @@ ec.epiCurve <- function(x,
   
   if (!is.null(date)) {
     names(DF)[names(DF)==date] <- "Date"
-    DF$Date <- as.Date(DF$Date)
+    if (period=="week") {
+      DF$Date <- ISOweek2date(paste(DF$Date, "-1", sep=""))
+    }
+    else if(period == "month") {
+      DF$Date <- as.Date(paste(DF$Date,"-01",sep=""))
+    }
+    else {
+      DF$Date <- as.Date(DF$Date)
+    }
   }
   
   if (!is.null(freq)) {
@@ -80,16 +88,28 @@ ec.epiCurve <- function(x,
   
   if (period == "week") {
     DW = data_frame(Date = seq(min(DF$Date), max(DF$Date), by="week"))
+    DW$Date <- ISOweek(DW$Date)
+    DF$Date <- ISOweek(DF$Date)
     DF <- dplyr::left_join(x = DW, y = DF, by = "Date") %>%
       as.data.frame()
     DF$Freq[is.na(DF$Freq)] <- 0
-    DF <- mutate(DF, Week = format(Date, "%Y-%V")) %>%
+
+#     d_labels = "%W"
+#     d_breaks = sprintf("%d weeks", n_ticks)
+    
+  }
+
+  if (period == "month") {
+    DM = data_frame(Date = seq(min(DF$Date), max(DF$Date), by="month"))
+    DF <- dplyr::left_join(x = DM, y = DF, by = "Date") %>%
+      as.data.frame()
+    DF$Freq[is.na(DF$Freq)] <- 0
+    DF <- mutate(DF, Mois = format(Date, "%Y-%m")) %>%
       mutate(Date = NULL) %>%
-      mutate(Date = Week)
+      mutate(Date = Mois)
     
-    d_labels = "%W"
-    d_breaks = sprintf("%d weeks", n_ticks)
-    
+#     d_labels = "%W"
+#     d_breaks = sprintf("%d months", n_ticks)
   }
   
   P_ <- ggplot(arrange(DF, Cut), aes(x=Date, y=Freq, fill=factor(Cut))) 
