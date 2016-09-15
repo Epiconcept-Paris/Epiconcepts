@@ -7,7 +7,8 @@ ec.epiCurve <- function(x,
                         colors = NULL,
                         title = NULL,
                         xlabel = NULL,
-                        ylabel=NULL) {
+                        ylabel=NULL,
+                        note = NULL) {
   
   
   DF <- x
@@ -81,9 +82,6 @@ ec.epiCurve <- function(x,
     DF <- mutate(DF, Day = format(Date, "%Y-%m-%d")) %>%
       mutate(Date = NULL) %>%
       mutate(Date = Day)
-    
-    d_labels = "%W"
-    d_breaks = sprintf("%d days", n_ticks)
   }
   
   if (period == "week") {
@@ -94,10 +92,7 @@ ec.epiCurve <- function(x,
       as.data.frame()
     DF$Freq[is.na(DF$Freq)] <- 0
 
-#     d_labels = "%W"
-#     d_breaks = sprintf("%d weeks", n_ticks)
-    
-  }
+}
 
   if (period == "month") {
     DM = data_frame(Date = seq(min(DF$Date), max(DF$Date), by="month"))
@@ -107,9 +102,6 @@ ec.epiCurve <- function(x,
     DF <- mutate(DF, Mois = format(Date, "%Y-%m")) %>%
       mutate(Date = NULL) %>%
       mutate(Date = Mois)
-    
-#     d_labels = "%W"
-#     d_breaks = sprintf("%d months", n_ticks)
   }
   
   P_ <- ggplot(arrange(DF, Cut), aes(x=Date, y=Freq, fill=factor(Cut))) 
@@ -120,9 +112,12 @@ ec.epiCurve <- function(x,
                                guide = guide_legend(reverse = TRUE)) +
     scale_y_continuous(expand = c(0,0)) +
     
-    geom_hline(yintercept=seq(1, MaxValue, by=1), colour="white", size=0.3) +
-    geom_vline(xintercept = seq(1.5, nrow(DF), by=1), colour="white", size=0.3) +
-    xlab(xlabel) + 
+    geom_hline(yintercept=seq(1, MaxValue, by=1), colour="white", size=0.3)
+  if (nrow(DF) > 1) {
+    P_ <- P_ + geom_vline(xintercept = seq(1.5, nrow(DF), by=1), colour="white", size=0.3)
+  }
+  note <- gsub('(.{1,90})(\\s|$)', '\\1\n', note)
+  P_ <- P_ + xlab(paste(xlabel, note, sep="\n\n")) + 
     ylab(ylabel) +
     labs(title = title, fill = "") +
     coord_fixed(ratio=1) +
@@ -131,7 +126,6 @@ ec.epiCurve <- function(x,
     theme(axis.text.x = element_text(angle=90))+
     theme(axis.line.x = element_line(colour="black", linetype="solid", size = 0.5),
           axis.line.y = element_line(colour="black", linetype="solid", size = 0.5))
-    
-  P_
+    P_
 }
 

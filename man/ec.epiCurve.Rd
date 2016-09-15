@@ -7,7 +7,7 @@ This function plot an epidemic curve  (need ggplot2)}
 \usage{
 ec.epiCurve(x, date = NULL,freq = NULL, cutvar = NULL, 
    period = NULL, cutorder = NULL, colors = NULL,
-   title = NULL, xlabel = NULL, ylabel=NULL)
+   title = NULL, xlabel = NULL, ylabel=NULL, note=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -15,12 +15,17 @@ ec.epiCurve(x, date = NULL,freq = NULL, cutvar = NULL,
   \item{date}{character, name of Date column}
   \item{freq}{character, name of a column with a value to display}
   \item{cutvar}{character, name of a column with factors}
-  \item{period}{character, c("day","week")}
+  \item{period}{character, c("day","week", "month")}
   \item{cutorder}{character vector of factors}
   \item{colors}{character vector of colors}
   \item{title}{character, title of the plot}
   \item{xlabel}{character, label for x axis}
   \item{ylabel}{character, label for y axis}
+  \item{note}{character, add a note under the graph}
+}
+
+\details{
+When period is "week" the date MUST be in ISOweek format YYYY-WNN. When period is "month" the date MUST be formated YYYY-MM.
 }
 
 \references{https://fr.wikipedia.org/wiki/Courbe_épidémique }

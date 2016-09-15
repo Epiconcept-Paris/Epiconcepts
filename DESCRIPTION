@@ -1,7 +1,7 @@
 Package: Epiconcepts
 Type: Package
 Title: Tools for epidemiologists
-Version: 0.40
+Version: 0.50
 Date: 2014-06-10
 Author: jp.decorps@epiconcept.fr
 Maintainer: Jean Pierre Decorps <jp.decorps@epiconcept.fr>
